@@ -12,14 +12,58 @@ const initialMessages = {
   Random: []
 };
 
+
 function readStorage(key, fallback) {
   try {
     const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
+
+    if (!value) return fallback;
+
+    const parsed = JSON.parse(value);
+
+    if (key === 'chatUser') {
+      return parsed &&
+        typeof parsed.name === 'string' &&
+        parsed.name.trim()
+        ? parsed
+        : fallback;
+    }
+
+    if (key === 'chatRooms') {
+      return Array.isArray(parsed) &&
+        parsed.every(room => typeof room === 'string' && room.trim())
+        ? parsed
+        : fallback;
+    }
+
+    if (key === 'chatMessages') {
+      const validMessages =
+        parsed &&
+        typeof parsed === 'object' &&
+        !Array.isArray(parsed) &&
+        Object.values(parsed).every(
+          roomMessages =>
+            Array.isArray(roomMessages) &&
+            roomMessages.every(
+              msg =>
+                msg &&
+                typeof msg.sender === 'string' &&
+                typeof msg.text === 'string' &&
+                typeof msg.time === 'string' &&
+                (typeof msg.id === 'string' ||
+                  typeof msg.id === 'number')
+            )
+        );
+
+      return validMessages ? parsed : fallback;
+    }
+
+    return fallback;
   } catch {
     return fallback;
   }
 }
+
 
 function Login() {
   const navigate = useNavigate();
